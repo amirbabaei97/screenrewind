@@ -11,6 +11,7 @@ class Snapshot(Base):
     ocr_text = Column(Text, nullable=True)
     window_title = Column(String, nullable=True)
     app_name = Column(String, nullable=True)
+    category = Column(String, default="Uncategorized")
     
     def __repr__(self):
         return f"<Snapshot(id={self.id}, timestamp={self.timestamp})>"

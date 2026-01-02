@@ -81,7 +81,16 @@ To achieve "Everyone can install it":
 
 ## 5. Development Roadmap (MVP)
 
-1. **Phase 1 (Core):** Python script that uses `mss` to take screenshots, `RapidOCR` to read them, and saves to SQLite. (No UI yet).
-2. **Phase 2 (API):** Wrap the script in FastAPI so you can query `GET /snapshots/latest`    
-3. **Phase 3 (UI):** Build the React Timeline component to visualize the data from the API.
-4. **Phase 4 (Packaging):** Set up Tauri to bundle the Python script and React frontend into a `.dmg` / `.exe`.
+1. **Phase 1 (Core):** Python script that uses `mss` to take screenshots, `RapidOCR` to read them, and saves to SQLite. (No UI yet). **(Completed)**
+2. **Phase 2 (API):** Wrap the script in FastAPI so you can query `GET /snapshots/latest`. **(Completed)**
+3. **Phase 3 (Menu Bar App - Standalone):** 
+    - Develop a lightweight macOS Menu Bar application (using `rumps` or similar).
+    - **Features:**
+        - Status Icon (Recording/Paused).
+        - "Pause/Resume" toggle.
+        - "Settings" modal to manage Categories and Keywords.
+        - "Quit" option.
+    - **Logic:** Implement basic keyword-based categorization (if keyword in OCR text -> assign category).
+    - **Packaging:** Create a standalone `.app` executable for macOS.
+4. **Phase 4 (Full UI - The "Brain"):** Build the React Timeline component to visualize the data from the API.
+5. **Phase 5 (Packaging - Full App):** Set up Tauri to bundle the Python script and React frontend into a `.dmg` / `.exe`.

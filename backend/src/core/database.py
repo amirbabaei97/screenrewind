@@ -1,11 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
+from src.core.config import APP_DATA_DIR
 
 # Ensure the data directory exists
-os.makedirs("data", exist_ok=True)
+DB_DIR = os.path.join(APP_DATA_DIR, "data")
+os.makedirs(DB_DIR, exist_ok=True)
 
-DATABASE_URL = "sqlite:///./data/screenrewind.db"
+DATABASE_URL = f"sqlite:///{os.path.join(DB_DIR, 'screenrewind.db')}"
 
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}

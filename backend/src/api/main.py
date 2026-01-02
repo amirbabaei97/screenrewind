@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.routers import snapshots
+from src.api.routers import snapshots, analytics, categories
 from src.core.database import init_db
 
 app = FastAPI(title="ScreenRewind API")
@@ -16,6 +16,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(snapshots.router)
+app.include_router(analytics.router)
+app.include_router(categories.router)
 
 @app.on_event("startup")
 def on_startup():

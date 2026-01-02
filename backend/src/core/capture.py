@@ -5,8 +5,9 @@ import os
 from PIL import Image
 import logging
 from src.core.utils import get_active_window_info
+from src.core.config import APP_DATA_DIR
 
-SCREENSHOTS_DIR = "data/screenshots"
+SCREENSHOTS_DIR = os.path.join(APP_DATA_DIR, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 def get_monitor_intersection(monitor, window):
