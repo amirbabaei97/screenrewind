@@ -24,7 +24,7 @@ logging.basicConfig(
 CAPTURE_INTERVAL = 10  # seconds
 
 def main():
-    logging.info("Starting GhostTrace Daemon...")
+    logging.info("Starting ScreenRewind Daemon...")
     
     # Initialize Database
     init_db()
@@ -74,7 +74,7 @@ def main():
             time.sleep(sleep_time)
 
     except KeyboardInterrupt:
-        logging.info("GhostTrace Daemon stopped by user.")
+        logging.info("ScreenRewind Daemon stopped by user.")
 
 if __name__ == "__main__":
     main()
