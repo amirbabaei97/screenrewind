@@ -17,9 +17,46 @@ def run_api():
     # Run uvicorn in a separate thread
     uvicorn.run(api_app, host="127.0.0.1", port=8000, log_level="error")
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        # In dev, we are in src/gui, so we need to go up to backend root to find assets if we used that structure
+        # But here we expect the icon to be in src/gui in the bundle.
+        # Let's handle the dev case: if we are in src/gui, look in ../../assets
+        
+    # Check if we are in dev mode (no _MEIPASS)
+    if not hasattr(sys, '_MEIPASS'):
+        # Dev mode: assets are in backend/assets
+        # Current file is backend/src/gui/tray.py
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        return os.path.join(base_path, "assets", relative_path)
+    
+    # Bundle mode: we put the icon in src/gui
+    return os.path.join(base_path, "src", "gui", relative_path)
+
 class ScreenRewindApp(rumps.App):
     def __init__(self):
-        super(ScreenRewindApp, self).__init__("SR", icon=None)
+        # Use icon if available, otherwise fallback to text
+        # In build_app.sh we added: --add-data "assets/menubar_icon.png:src/gui"
+        # So in the bundle it is at src/gui/menubar_icon.png
+        # In dev, we want to look at assets/menubar_icon.png
+        
+        icon_name = "menubar_icon.png"
+        icon_path = resource_path(icon_name)
+        
+        # Debug logging (temporary, writes to a file on Desktop if it fails)
+        if not os.path.exists(icon_path):
+             # Fallback logic or logging
+             pass
+
+        if os.path.exists(icon_path):
+            super(ScreenRewindApp, self).__init__("SR", icon=icon_path)
+        else:
+            super(ScreenRewindApp, self).__init__("SR", icon=None)
         
         # Start API Server
         self.api_thread = threading.Thread(target=run_api, daemon=True)

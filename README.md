@@ -19,7 +19,33 @@ ScreenRewind is a locally hosted, cross-platform desktop application that automa
 - FastAPI backend for querying data.
 - Endpoints to retrieve snapshots and search OCR text.
 
-## Setup
+## Installation (macOS App)
+
+**Compatibility:** This build is optimized for **Apple Silicon (M1/M2/M3/M4)** Macs running macOS.
+
+1.  **Download** the latest release from the GitHub Releases page.
+2.  **Unzip** the file to extract `ScreenRewind.app`.
+
+### First-Time Launch
+Because this app is not signed with an Apple Developer certificate yet, macOS will block it if you just double-click.
+
+1.  **Right-click (or Control-click)** on `ScreenRewind.app`.
+2.  Select **Open** from the menu.
+3.  Click **Open** in the warning dialog.
+    *   *You only need to do this once.*
+
+### Permissions
+To allow the app to capture your activity:
+1.  When prompted, grant **Screen Recording** permission in System Settings.
+2.  If you don't see a prompt, go to **System Settings > Privacy & Security > Screen Recording** and enable **ScreenRewind**.
+
+### How to Use
+*   The app runs in the **Menu Bar** (look for the "SR" icon).
+*   **Start/Pause:** Click the icon to pause or resume recording.
+*   **Interval:** Change how often snapshots are taken (10s - 5m).
+*   **Settings:** Open the configuration file to customize categories.
+
+## Setup (For Developers)
 
 1.  Navigate to `backend/`.
 2.  Create a virtual environment: `python3 -m venv venv`

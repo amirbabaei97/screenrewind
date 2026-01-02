@@ -16,7 +16,9 @@ rm -rf build dist
 ./venv/bin/pyinstaller --noconfirm --clean \
     --windowed \
     --name "ScreenRewind" \
+    --icon "assets/app_icon.icns" \
     --add-data "src:src" \
+    --add-data "assets/menubar_icon.png:src/gui" \
     --hidden-import "sqlalchemy.sql.default_comparator" \
     --hidden-import "rapidocr_onnxruntime" \
     --hidden-import "uvicorn" \
