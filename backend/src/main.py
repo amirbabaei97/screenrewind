@@ -21,10 +21,10 @@ logging.basicConfig(
     ]
 )
 
-CAPTURE_INTERVAL = 60  # seconds
+CAPTURE_INTERVAL = 10  # seconds
 
 def main():
-    logging.info("Starting ScreenRewind Daemon...")
+    logging.info("Starting GhostTrace Daemon...")
     
     # Initialize Database
     init_db()
@@ -44,7 +44,7 @@ def main():
                 logging.info("Performing OCR...")
                 text = extract_text(filepath)
                 logging.info(f"OCR complete. Extracted {len(text)} characters.")
-                logging.info(f"Extracted Text: {text}")
+                logging.info(f"OCR Text: {text}")
 
                 # 3. Save to Database
                 session = SessionLocal()
@@ -74,7 +74,7 @@ def main():
             time.sleep(sleep_time)
 
     except KeyboardInterrupt:
-        logging.info("ScreenRewind Daemon stopped by user.")
+        logging.info("GhostTrace Daemon stopped by user.")
 
 if __name__ == "__main__":
     main()

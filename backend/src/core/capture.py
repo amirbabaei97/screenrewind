@@ -32,20 +32,29 @@ def capture_screen() -> str:
     """
     Captures the screen containing the active window, saves it as WebP, and returns the file path.
     """
+    # Get active window info BEFORE initializing mss
+    # This avoids any potential conflict or delay
+    active_window = get_active_window_info()
+
     with mss.mss() as sct:
-        active_window = get_active_window_info()
         selected_monitor = sct.monitors[1] # Default to primary
         
         if active_window:
             logging.info(f"Active window found: {active_window.get('app_name', 'Unknown')} - {active_window}")
             max_area = 0
+            best_monitor_idx = 1
+            
             # Iterate over all monitors (skipping index 0 which is all monitors combined)
             for i, monitor in enumerate(sct.monitors[1:], start=1):
                 area = get_monitor_intersection(monitor, active_window)
+                logging.info(f"Monitor {i} intersection area: {area}")
+                
                 if area > max_area:
                     max_area = area
                     selected_monitor = monitor
-                    logging.info(f"Active window on monitor {i} (Area: {area})")
+                    best_monitor_idx = i
+            
+            logging.info(f"Selected Monitor {best_monitor_idx} with intersection area {max_area}")
         else:
             logging.info("No active window detected, using primary monitor.")
 
