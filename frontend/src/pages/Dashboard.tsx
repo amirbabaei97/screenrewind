@@ -8,29 +8,77 @@ import clsx from 'clsx';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#6B5B95'];
 
 const Dashboard: React.FC = () => {
-    const [period, setPeriod] = useState<'today' | 'yesterday'>('today');
+    // Dates are stored as Date objects (local time)
+    const [startDate, setStartDate] = useState<Date>(new Date());
+    const [endDate, setEndDate] = useState<Date>(new Date());
+    const [dateRangeLabel, setDateRangeLabel] = useState<'today' | 'yesterday' | 'week' | 'custom'>('today');
+    
     const [projectData, setProjectData] = useState<ChartData[]>([]);
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [taskData, setTaskData] = useState<ChartData[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const getDateRange = () => {
-        const end = new Date();
+    // Initialize dates on mount
+    useEffect(() => {
+        handleDatePreset('today');
+    }, []);
+
+    const handleDatePreset = (preset: 'today' | 'yesterday' | 'week') => {
         const start = new Date();
+        const end = new Date();
         start.setHours(0, 0, 0, 0);
         
-        if (period === 'yesterday') {
+        // Ensure end includes the full day (so user sees data up to "now" or end of day)
+        // For 'yesterday' we end at 23:59:59 of yesterday. For 'today', we end up to current time (or end of day).
+        // Let's use end of day for consistency if viewing historical.
+        
+        if (preset === 'today') {
+            // Start is 00:00 today. End is kept as "now" (default new Date())
+             end.setHours(23, 59, 59, 999);
+        } else if (preset === 'yesterday') {
             start.setDate(start.getDate() - 1);
             end.setDate(end.getDate() - 1);
             end.setHours(23, 59, 59, 999);
+        } else if (preset === 'week') {
+            start.setDate(start.getDate() - 7);
+             end.setHours(23, 59, 59, 999);
         }
         
-        return { start, end };
+        setStartDate(start);
+        setEndDate(end);
+        setDateRangeLabel(preset);
+    };
+
+    const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
+        const date = new Date(value);
+        // Correct for timezone offset if dealing with simple date inputs,
+        // but typically input="date" returns YYYY-MM-DD. 
+        // new Date("YYYY-MM-DD") is UTC, new Date(y,m,d) is local.
+        // Let's rely on standard parsing but set time to boundary.
+        
+        const parts = value.split('-');
+        if(parts.length === 3) {
+             const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+             if (type === 'start') {
+                 d.setHours(0,0,0,0);
+                 setStartDate(d);
+             } else {
+                 d.setHours(23,59,59,999);
+                 setEndDate(d);
+             }
+             setDateRangeLabel('custom');
+        }
+    };
+
+    const formatDateForInput = (date: Date) => {
+        const offset = date.getTimezoneOffset();
+        const d = new Date(date.getTime() - (offset*60*1000));
+        return d.toISOString().split('T')[0];
     };
 
     useEffect(() => {
         fetchProjects();
-    }, [period]);
+    }, [startDate, endDate]);
 
     useEffect(() => {
         if (selectedProject) {
@@ -38,13 +86,12 @@ const Dashboard: React.FC = () => {
         } else {
             setTaskData([]);
         }
-    }, [selectedProject, period]);
+    }, [selectedProject, startDate, endDate]);
 
     const fetchProjects = async () => {
         setLoading(true);
         try {
-            const { start, end } = getDateRange();
-            const data = await getProjectAnalytics(start, end);
+            const data = await getProjectAnalytics(startDate, endDate);
             setProjectData(data);
         } catch (error) {
             console.error("Failed to fetch project data", error);
@@ -55,8 +102,7 @@ const Dashboard: React.FC = () => {
 
     const fetchTasks = async (projectName: string) => {
         try {
-            const { start, end } = getDateRange();
-            const data = await getTaskAnalytics(projectName, start, end);
+            const data = await getTaskAnalytics(projectName, startDate, endDate);
             setTaskData(data);
         } catch (error) {
             console.error("Failed to fetch task data", error);
@@ -71,33 +117,53 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="p-8">
-            <header className="flex justify-between items-center mb-8">
+            <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-                    <p className="text-gray-400 mt-1">Overview of your activity</p>
+                    <p className="text-gray-400 mt-1">
+                        Activity from <span className="text-blue-400 font-medium">{startDate.toLocaleDateString()}</span> to <span className="text-blue-400 font-medium">{endDate.toLocaleDateString()}</span>
+                    </p>
                 </div>
                 
-                <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
-                    <button 
-                        onClick={() => setPeriod('today')}
-                        className={clsx(
-                            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                            period === 'today' ? "bg-blue-600 text-white" : "text-gray-300 hover:text-white"
-                        )}
-                    >
-                        Today
-                    </button>
-                    <button 
-                        onClick={() => setPeriod('yesterday')}
-                        className={clsx(
-                            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                            period === 'yesterday' ? "bg-blue-600 text-white" : "text-gray-300 hover:text-white"
-                        )}
-                    >
-                        Yesterday
-                    </button>
+                <div className="flex flex-col sm:flex-row gap-2 bg-gray-800 rounded-lg p-2 border border-gray-700">
+                     <div className="flex space-x-1">
+                        <button 
+                            onClick={() => handleDatePreset('today')}
+                            className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'today' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
+                        >
+                            Today
+                        </button>
+                        <button 
+                            onClick={() => handleDatePreset('yesterday')}
+                            className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'yesterday' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
+                        >
+                            Yesterday
+                        </button>
+                        <button 
+                            onClick={() => handleDatePreset('week')}
+                            className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'week' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
+                        >
+                            Last 7 Days
+                        </button>
+                    </div>
+                    <div className="flex items-center space-x-2 border-t sm:border-t-0 sm:border-l border-gray-600 pt-2 sm:pt-0 sm:pl-2">
+                        <input 
+                            type="date" 
+                            className="bg-gray-900 text-white border border-gray-700 rounded text-xs px-2 py-1"
+                            value={formatDateForInput(startDate)}
+                            onChange={(e) => handleCustomDateChange('start', e.target.value)}
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input 
+                            type="date" 
+                            className="bg-gray-900 text-white border border-gray-700 rounded text-xs px-2 py-1"
+                            value={formatDateForInput(endDate)}
+                            onChange={(e) => handleCustomDateChange('end', e.target.value)}
+                        />
+                    </div>
                 </div>
             </header>
+
 
             {loading ? (
                 <div className="text-white">Loading...</div>
@@ -135,7 +201,8 @@ const Dashboard: React.FC = () => {
                                         </Pie>
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                                            formatter={(value: number) => [`\${value} mins`, 'Duration']}
+                                            itemStyle={{ color: '#fff' }}
+                                            formatter={(value: number) => [`${value} mins`, 'Duration']}
                                         />
                                         <Legend />
                                     </PieChart>
@@ -173,7 +240,8 @@ const Dashboard: React.FC = () => {
                                         </Pie>
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                                            formatter={(value: number) => [`\${value} mins`, 'Duration']}
+                                            itemStyle={{ color: '#fff' }}
+                                            formatter={(value: number) => [`${value} mins`, 'Duration']}
                                         />
                                         <Legend />
                                     </PieChart>
@@ -203,6 +271,7 @@ const Dashboard: React.FC = () => {
                                 <YAxis dataKey="name" type="category" stroke="#9CA3AF" width={100} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
+                                    itemStyle={{ color: '#fff' }}
                                     cursor={{fill: 'rgba(255, 255, 255, 0.05)'}}
                                 />
                                 <Bar dataKey="value" fill="#00C49F" radius={[0, 4, 4, 0]}>

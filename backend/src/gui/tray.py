@@ -13,6 +13,8 @@ from src.core.config import load_categories, save_categories, CATEGORIES_FILE, l
 from src.api.main import app as api_app
 import subprocess
 
+import webbrowser
+
 def run_api():
     # Run uvicorn in a separate thread
     uvicorn.run(api_app, host="127.0.0.1", port=8000, log_level="error")
@@ -81,7 +83,7 @@ class ScreenRewindApp(rumps.App):
             rumps.MenuItem("Pause Recording", callback=self.toggle_recording),
             rumps.separator,
             self.interval_menu,
-            rumps.MenuItem("Settings", callback=self.open_settings)
+            rumps.MenuItem("Dashboard", callback=self.open_dashboard)
         ]
         self.is_paused = False
 
@@ -112,7 +114,13 @@ class ScreenRewindApp(rumps.App):
             sender.title = "Resume Recording"
             self.is_paused = True
 
-    def open_settings(self, _):
+    def open_dashboard(self, _):
+        # Open the dashboard URL in default browser
+        # In development, it's localhost:5173. In prod, it might be served by backend.
+        url = "http://localhost:5173"
+        webbrowser.open(url)
+
+    def open_settings_file_deprecated(self, _):
         # Ensure config file exists
         if not os.path.exists(CATEGORIES_FILE):
             save_categories(load_categories())

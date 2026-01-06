@@ -18,6 +18,11 @@ export const createProject = async (name: string, description?: string) => {
     return response.data;
 };
 
+export const updateProject = async (id: number, name: string, description?: string) => {
+    const response = await api.put<Project>(`/projects/${id}`, { name, description });
+    return response.data;
+};
+
 export const deleteProject = async (id: number) => {
     await api.delete(`/projects/${id}`);
 };
@@ -71,5 +76,11 @@ export const getTaskAnalytics = async (projectName: string, start: Date, end: Da
             end: end.toISOString()
         }
     });
+    return response.data;
+};
+
+// System
+export const resetDatabase = async () => {
+    const response = await api.delete('/system/reset-data');
     return response.data;
 };
