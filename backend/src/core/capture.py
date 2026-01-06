@@ -29,9 +29,9 @@ def get_monitor_intersection(monitor, window):
 
     return x_overlap * y_overlap
 
-def capture_screen() -> str:
+def capture_screen() -> tuple[str, dict]:
     """
-    Captures the screen containing the active window, saves it as WebP, and returns the file path.
+    Captures the screen containing the active window, saves it as WebP, and returns the file path and window info.
     """
     # Get active window info BEFORE initializing mss
     # This avoids any potential conflict or delay
@@ -70,4 +70,4 @@ def capture_screen() -> str:
         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
         img.save(filepath, "WEBP", quality=75)
 
-        return filepath
+        return filepath, active_window
