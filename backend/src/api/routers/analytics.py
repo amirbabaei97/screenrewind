@@ -12,42 +12,66 @@ router = APIRouter(
     tags=["analytics"]
 )
 
-@router.get("/time-distribution")
-def get_time_distribution(
-    start_date: datetime = Query(..., example="2026-01-01T00:00:00"),
-    end_date: datetime = Query(..., example="2026-01-02T23:59:59"),
+@router.get("/projects")
+def get_project_distribution(
+    start: datetime,
+    end: datetime,
     db: Session = Depends(get_db)
 ):
     """
-    Calculate time spent per category based on snapshot count.
-    Assumes 1 snapshot = 10 seconds (default interval).
+    Get time distribution by project.
     """
-    # Group by category and count
     results = db.query(
-        Snapshot.category, 
+        Snapshot.project_name,
         func.count(Snapshot.id).label("count")
     ).filter(
-        Snapshot.timestamp >= start_date,
-        Snapshot.timestamp <= end_date
-    ).group_by(Snapshot.category).all()
+        Snapshot.timestamp >= start,
+        Snapshot.timestamp <= end
+    ).group_by(Snapshot.project_name).all()
     
-    # Convert to time (minutes)
-    # 1 snapshot = 10 seconds
-    # minutes = count * 10 / 60 = count / 6
+    data = []
+    total_count = sum(r[1] for r in results)
     
-    distribution = {}
-    total_minutes = 0
-    
-    for category, count in results:
-        minutes = round(count * 10 / 60, 2)
-        distribution[category] = minutes
-        total_minutes += minutes
+    for project, count in results:
+        minutes = round(count * 10 / 60, 2) # Assuming 10s interval
+        project_name = project if project else "Uncategorized"
+        data.append({
+            "name": project_name,
+            "value": minutes,
+            "percentage": round((count / total_count) * 100, 1) if total_count > 0 else 0
+        })
         
-    return {
-        "period": {
-            "start": start_date,
-            "end": end_date
-        },
-        "total_minutes": total_minutes,
-        "distribution": distribution
-    }
+    return data
+
+@router.get("/projects/{project_name}/tasks")
+def get_task_distribution(
+    project_name: str,
+    start: datetime,
+    end: datetime,
+    db: Session = Depends(get_db)
+):
+    """
+    Get time distribution by task for a specific project.
+    """
+    results = db.query(
+        Snapshot.task_name,
+        func.count(Snapshot.id).label("count")
+    ).filter(
+        Snapshot.timestamp >= start,
+        Snapshot.timestamp <= end,
+        Snapshot.project_name == project_name
+    ).group_by(Snapshot.task_name).all()
+    
+    data = []
+    total_count = sum(r[1] for r in results)
+    
+    for task, count in results:
+        minutes = round(count * 10 / 60, 2)
+        task_name = task if task else "General"
+        data.append({
+            "name": task_name,
+            "value": minutes,
+            "percentage": round((count / total_count) * 100, 1) if total_count > 0 else 0
+        })
+        
+    return data

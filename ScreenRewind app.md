@@ -55,19 +55,33 @@ The system must run silently in the background (System Tray application).
     - _Layer 1 (Heuristic):_ Regex rules (e.g., If App == "VS Code", Category = "Coding"). These rules are user defined, so this has the highest priority. uses only window title. 
     - _Layer 2 (LLM):_ If first layer rules fail, send the OCR text + Window Title to the local LLM with the prompt: _"Given this text from a screen, classify the activity into one of these categories: [List]. Return JSON."_ (Prompt obviously should be improved)
 
- ### FR4: User Interface (The Dashboard)
-- **4.1 The "Rewind":** A graphical timeline spanning 00:00 to current time. Users can drag a handle to "rewind" their day.
-- **4.2 The Viewer:** The center stage displays the screenshot associated with the timestamp.
-- **4.3 Activity Heatmap:** A color-coded bar under the scrubber showing category density (e.g., Blue blocks for Work, Red blocks for YouTube). It also shows the icon of the app that was used at that time
-- **4.4 Search Bar:** Full-text search across all historical OCR data.
+### FR4: UI (Dashboard & Management)
+
+- **4.1 Analytics Dashboard:** Visualization of time tracking data.
+    - _Time Periods:_ Selectable ranges: Today, Yesterday, Custom Date Range.
+    - _Project Distribution (Pie Chart):_ Shows percentage of time spent on each Project for the selected period.
+    - _Task Drill-down:_ Clicking a Project sector opens a secondary Pie Chart showing time distribution of Tasks within that Project.
+    - _Trends (Bar/Line Charts):_ 
+        - Bar Chart: Daily time spent on top projects over the last week.
+        - Line Chart: Total activity hours trends.
+- **4.2 Management Console:**
+    - _Projects & Tasks:_ Interface to list, create, update (descriptions), and delete Projects and their sub-Tasks.
+    - _Rules Management:_ Interface to CRUD text/regex rules (Layer 1 classification) and link them to specific Projects/Tasks.
+
+### FR5: Time Machine (The Rewind)
+
+- **5.1 The "Rewind":** A graphical timeline spanning 00:00 to current time. Users can drag a handle to "rewind" their day.
+- **5.2 The Viewer:** The center stage displays the screenshot associated with the timestamp.
+- **5.3 Activity Heatmap:** A color-coded bar under the scrubber showing category density (e.g., Blue blocks for Work, Red blocks for YouTube). It also shows the icon of the app that was used at that time
+- **5.4 Search Bar:** Full-text search across all historical OCR data.
     - _Query:_ "Gradient Descent" -> _Result:_ Shows all timestamps where that text appeared on screen and highlighting the text found in the screenshots.
 
-### FR5: Data Lifecycle Management
+### FR6: Data Lifecycle Management
 
-- **5.1 Retention Policy:** Configurable "Time to Live" (TTL).
+- **6.1 Retention Policy:** Configurable "Time to Live" (TTL).
     - _Example:_ "Delete screenshots after 30 days, but keep text logs forever."
-- **5.2 Export:** Ability to export a CSV report of time spent per category/project for the desired time. 
-- **5.3 "Nuke" Button:** A panic button to delete all data immediately.
+- **6.2 Export:** Ability to export a CSV report of time spent per category/project for the desired time. 
+- **6.3 "Nuke" Button:** A panic button to delete all data immediately.
 
 ## 4. Deployment & Distribution Strategy
 
