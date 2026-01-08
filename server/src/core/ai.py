@@ -7,13 +7,17 @@ from sqlalchemy.orm import Session
 from src.core.database import SessionLocal
 from src.models.project import Project, Task
 import logging
+import dotenv
+
+dotenv.load_dotenv()
+
 
 # initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Gemini Client
-# Assuming GEMINI_API_KEY is set in environment variables
+# reading API key from environment variable .env file
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def get_context_from_db(db: Session):
