@@ -1,125 +1,134 @@
 # ScreenRewind
 
-ScreenRewind is an intelligent, locally-hosted time tracking tool that automatically captures your screen, extracts text via OCR, and uses AI (Google Gemini) to categorize your work into Projects and Tasks.
+ScreenRewind is a privacy-focused, multi-device activity tracking system. It consists of a lightweight **Client** (Mac Tray App) that captures your work context, a centralized **Server** that processes and stores data, and a **Web Dashboard** for analytics and "Time Travel".
 
-It features a background daemon with a system tray interface and a modern React-based dashboard for analytics and management.
+## Architecture
+
+ScreenRewind is built on a 3-tier architecture:
+
+1.  **Client (Mac):** 
+    - Runs silently in the system tray.
+    - Captures screenshots and Active Window metadata.
+    - Performs **Offline OCR** (Optical Character Recognition) on the device.
+    - Queues data locally if offline, syncing when the connection is restored.
+    - Tech: Python, MSS, RapidOCR, SQLite (Queue), Requests.
+
+2.  **Server (API):**
+    - REST API powered by **FastAPI**.
+    - Handles data ingestion, storage, and retrieval.
+    - Stores images in file storage and metadata in **PostgreSQL**.
+    - Manages User Authentication and Logic Rules.
+    - Tech: FastAPI, SQLAlchemy, PostgreSQL, Google Gemini (AI).
+
+3.  **Frontend (Web):**
+    - Modern Dashboard to view productivity insights.
+    - "Rewind" feature to traverse your history visually.
+    - Tech: React 19, Vite, Tailwind CSS, Recharts.
+
+---
+
+## 🚀 Deployment & Installation
+
+### 1. Server Setup (Ubuntu/Linux)
+
+The server acts as the central brain.
+
+**Prerequisites:** Python 3.10+, PostgreSQL, Nginx.
+
+```bash
+# 1. Clone & Navigate
+git clone https://github.com/yourusername/screenrewind.git
+cd screenrewind/server
+
+# 2. Setup Database (PostgreSQL)
+# Ensure you have a DB created named 'screenrewind'
+
+# 3. Environment Setup
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Configuration
+export DATABASE_URL="postgresql://user:password@localhost/screenrewind"
+
+# 5. Run (Dev)
+uvicorn src.api.main:app --reload
+
+# 5. Run (Prod)
+# Use gunicorn/systemd as described in deployment docs.
+```
+
+### 2. Client Setup (macOS)
+
+The client runs on your machine to capture data.
+
+**Prerequisites:** Python 3.10+ (recommend creating a virtual env).
+
+```bash
+cd screenrewind/client
+
+# 1. Environment Setup
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Run Locally
+python src/main.py
+
+# 3. Build Standalone App (.app)
+pyinstaller --name ScreenRewind --windowed --icon=assets/app_icon.icns src/gui/tray.py
+```
+
+*Note: The client is configured to send data to `https://api.screenrewind.amir.rocks`. Edit `API_URL` in `src/main.py` for local dev.*
+
+### 3. Frontend Setup (Web)
+
+The interface to view your data.
+
+**Prerequisites:** Node.js / Bun.
+
+```bash
+cd screenrewind/frontend
+
+# 1. Install
+bun install # or npm install
+
+# 2. Run Dev Server
+bun dev
+
+# 3. Build for Production
+bun run build
+# The 'dist' folder is ready for deployment to Nginx/Vercel/Netlify.
+```
 
 ## Features
 
-### 🧠 Intelligent Tracking
-- **Automated Capture:** Takes screenshots at configurable intervals (10s, 30s, 60s, 5m).
-- **OCR Engine:** Extracts text from every screenshot using Tesseract.
-- **AI Categorization:** Uses Google Gemini (Generative AI) to analyze screen content and automatically assign it to a **Project** and **Task**.
-- **Rules Engine:** Define regex-based rules to override AI categorization for specific window titles or app names.
-
-### 📊 Dashboard & Analytics
-- **Activity Overview:** Visualize time spent on projects via Pie Charts and Bar Charts.
-- **Drill-Down:** Click on a project to see the breakdown of specific Tasks.
-- **Time Filtering:** View data for Today, Yesterday, Last 7 Days, or a Custom Range.
-- **Detailed Tooltips:** Precise duration tracking.
-
-### 🛠 Management
-- **Projects & Tasks:** Create, Edit, and Delete projects and tasks explicitly.
-- **Rules:** Manage manual overrides (e.g., "If window title contains 'YouTube', categorize as 'Personal'").
-- **Settings:** "Danger Zone" to reset all captured data while preserving project structures.
-
-### 🖥 MacOS Tray App
-- **Status Icon:** Visible in the menu bar ("SR").
-- **Quick Controls:** Pause/Resume recording, Change Interval.
-- **One-Click Dashboard:** Opens the web interface directly.
-
-## Tech Stack
-
-*   **Backend:** Python 3.10+, FastAPI, SQLAlchemy (SQLite), google-generativeai, pytesseract, mss.
-*   **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, Lucide Icons.
-*   **System:** MacOS specific optimizations (Quartz window management).
-
-## Installation & Setup (Developer)
-
-### Prerequisites
-1.  **Python 3.10+**
-2.  **Bun** (or Node.js)
-3.  **Tesseract OCR** (`brew install tesseract`)
-4.  **Google Gemini API Key** (Set as `GEMINI_API_KEY` env var)
-
-### 1. Backend Setup
-
-```bash
-cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create .env file
-echo "GEMINI_API_KEY=your_key_here" > .env
-
-# Run the Tray App (Background Daemon + API)
-python src/gui/tray.py
-```
-
-### 2. Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-bun install
-
-# Run Development Server
-bun dev
-```
-
-### 3. Usage
-
-1.  Start the Backend (Tray App will appear in menu bar).
-2.  Start the Frontend (visting `http://localhost:5173`).
-3.  **Tray Icon:** Right-click the "SR" icon in your mac menu bar -> Click **Dashboard** to open the UI.
-4.  **Dashboard:**
-    *   **Projects:** Define your main projects (e.g., "ScreenRewind", "Freelance", "Learning").
-    *   **Rules:** (Optional) Add specific rules if AI gets it wrong.
-    *   **Work:** Just work! The app will capture, OCR, and AI-classify your time.
-5.  **View Data:** Refresh the dashboard to see your time distribution.
-
-## "Danger Zone"
-
-In the **Settings** tab, you can reset the capture database.
-*   **Reset Database:** Deletes ALL screenshots, OCR text, and time logs.
-*   **Note:** Your Project definitions, Tasks, and Rules are *preserved*.
+- **Offline-First:** The client queues data when internet is lost and syncs automatically.
+- **Privacy-Centric:** OCR happens on-device. Images are stored securely on your self-hosted server.
+- **Smart Categorization:**
+    - **Layer 1:** Regex Rules (defined by you).
+    - **Layer 2:** AI Classification (Google Gemini) for "fuzzy" understanding.
+- **Time Travel:** Visually scrub back through your day to find what you were working on.
 
 ## Project Structure
 
-- `backend/src/daemon`: Capture & AI logic.
-- `backend/src/api`: FastAPI endpoints.
-- `backend/src/gui`: macOS Tray application.
-- `frontend/src/pages`: React UI (Dashboard, Projects, Rules, Settings).
-
-### API Endpoints
-
-#### Snapshots (`/snapshots`)
-- `GET /snapshots/`: List all snapshots (supports pagination and text search via `q`).
-- `GET /snapshots/latest`: Get the most recent snapshot.
-- `GET /snapshots/{id}`: Get details of a specific snapshot.
-
-#### Projects & Tasks (`/projects`)
-- `GET /projects/`: List all projects.
-- `POST /projects/`: Create a new project.
-- `PUT /projects/{id}`: Update a project's name or description.
-- `DELETE /projects/{id}`: Delete a project.
-- `POST /projects/{id}/tasks`: Create a task for a project.
-- `DELETE /projects/tasks/{task_id}`: Delete a task.
-
-#### Analytics (`/analytics`)
-- `GET /analytics/projects`: Get time distribution by project (filtering by start/end date).
-- `GET /analytics/projects/{name}/tasks`: Get time distribution by task for a specific project.
-
-#### Rules (`/rules`)
-- `GET /rules/`: List all categorization rules.
-- `POST /rules/`: Create a new regex-based rule.
-- `DELETE /rules/{id}`: Delete a rule.
-
-#### System (`/system`)
-- `DELETE /system/reset-data`: Clear all captured data (Screenshots, OCR, AI logs) but keep Projects/Tasks.
+```
+.
+├── client/           # Mac Tray Application
+│   ├── src/
+│   │   ├── gui/      # Tray menu logic
+│   │   ├── core/     # Capture, OCR, Queue logic
+│   │   └── main.py   # Entry point
+│
+├── server/           # Backend API
+│   ├── src/
+│   │   ├── api/      # FastAPI Routers
+│   │   ├── models/   # SQLAlchemy Models
+│   │   └── core/     # Config & Database
+│   └── uploads/      # Stored screenshots
+│
+└── frontend/         # React Dashboard
+    ├── src/
+    │   ├── pages/    # Dashboard, Projects, Rules
+    │   └── services/ # API Client
+```

@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# ScreenRewind Frontend (Web)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web-based dashboard for ScreenRewind. It connects to the ScreenRewind Backend API to display productivity metrics, manage projects, and "time travel" through past work.
 
-Currently, two official plugins are available:
+## Features
+- **Modern UI:** Built with React 19, TypeScript, and Tailwind CSS.
+- **Interactive Charts:** Visualizes time usage with Recharts.
+- **Time Travel:** A visual interface to scrub through past screenshots.
+- **Management:** Interface to create Projects, Tasks, and Categorization Rules.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Prerequisites
+- **Node.js** (v18+) or **Bun** (recommended)
 
-## React Compiler
+## Installation & Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Install Dependencies**
+   ```bash
+   cd frontend
+   bun install  # or npm install
+   ```
 
-## Expanding the ESLint configuration
+2. **Configuration**
+   The frontend expects the backend API to be running.
+   
+   By default, it points to `https://api.screenrewind.amir.rocks`. 
+   To change this for local development:
+   - Edit `src/services/api.ts`
+   - Set `baseURL` to `http://localhost:8000`.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3. **Running Development Server**
+   ```bash
+   bun dev
+   ```
+   Open `http://localhost:5173` to view the app.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+4. **Building for Production**
+   ```bash
+   bun run build
+   ```
+   This generates static files in the `dist/` folder, ready to be served by Nginx or any static file host.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Project Structure
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `src/components`: Reusable UI components (Charts, Buttons, Layouts).
+- `src/layouts`: Page layouts (Main container with Sidebar).
+- `src/pages`:
+    - **Dashboard:** Main view with today's summary.
+    - **Projects:** Management table for Projects/Tasks.
+    - **Rules:** Interface for regex rules.
+    - **Rewind:** The time-scrubber interface.
+    - **Settings:** App configuration and data management.
+- `src/services`: API client (`axios`) configuration.
+- `src/types`: TypeScript interfaces reflecting backend models.

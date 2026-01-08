@@ -1,24 +1,38 @@
-# Python
+# General
+.DS_Store
+Thumbs.db
+.env
+*.log
+
+# Python Global
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
-.env
-*.db
-*.sqlite
+.venv/
+.pytest_cache/
 
-# OS
-.DS_Store
-Thumbs.db
+# Client (Mac App)
+client/build/
+client/dist/
+client/data/
+client/upload_queue.db
+client/*.spec
 
-# IDE
+# Server (Backend)
+server/uploads/
+server/data/
+server/screenrewind.db
+server/instance/
+
+# Frontend (Web)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.output/
+frontend/.nuxt/
+frontend/.cache/
+
+# IDE settings
 .vscode/
 .idea/
-
-# Node
-node_modules/
-dist/
-build/
-
-# data
-data/
