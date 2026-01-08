@@ -4,7 +4,7 @@ import type { Project, Task, Rule } from '../types';
 export type { Project, Task, Rule, ProjectAnalytics, TaskAnalytics } from '../types';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: 'https://api.screenrewind.amir.rocks',
 });
 
 // Projects

@@ -1,74 +1,125 @@
 # ScreenRewind
 
-ScreenRewind is a locally hosted, cross-platform desktop application that automatically tracks user activity by capturing screen snapshots, performing Optical Character Recognition (OCR), and utilizing local AI to categorize work context.
+ScreenRewind is an intelligent, locally-hosted time tracking tool that automatically captures your screen, extracts text via OCR, and uses AI (Google Gemini) to categorize your work into Projects and Tasks.
 
-## Project Structure
-
-- `backend/`: Python backend (FastAPI, SQLite, OCR, Capture)
-- `frontend/`: React + Vite + TailwindCSS (Tauri wrapper) - *Coming in Phase 3*
+It features a background daemon with a system tray interface and a modern React-based dashboard for analytics and management.
 
 ## Features
 
-### Phase 1: Core Logic (Completed)
-- Captures screenshots every 10 seconds using `mss`.
-- Intelligent active monitor detection (macOS supported).
-- Extracts text using `RapidOCR`.
-- Stores metadata and text in `SQLite`.
+### 🧠 Intelligent Tracking
+- **Automated Capture:** Takes screenshots at configurable intervals (10s, 30s, 60s, 5m).
+- **OCR Engine:** Extracts text from every screenshot using Tesseract.
+- **AI Categorization:** Uses Google Gemini (Generative AI) to analyze screen content and automatically assign it to a **Project** and **Task**.
+- **Rules Engine:** Define regex-based rules to override AI categorization for specific window titles or app names.
 
-### Phase 2: API Layer (Completed)
-- FastAPI backend for querying data.
-- Endpoints to retrieve snapshots and search OCR text.
+### 📊 Dashboard & Analytics
+- **Activity Overview:** Visualize time spent on projects via Pie Charts and Bar Charts.
+- **Drill-Down:** Click on a project to see the breakdown of specific Tasks.
+- **Time Filtering:** View data for Today, Yesterday, Last 7 Days, or a Custom Range.
+- **Detailed Tooltips:** Precise duration tracking.
 
-## Installation (macOS App)
+### 🛠 Management
+- **Projects & Tasks:** Create, Edit, and Delete projects and tasks explicitly.
+- **Rules:** Manage manual overrides (e.g., "If window title contains 'YouTube', categorize as 'Personal'").
+- **Settings:** "Danger Zone" to reset all captured data while preserving project structures.
 
-**Compatibility:** This build is optimized for **Apple Silicon (M1/M2/M3/M4)** Macs running macOS.
+### 🖥 MacOS Tray App
+- **Status Icon:** Visible in the menu bar ("SR").
+- **Quick Controls:** Pause/Resume recording, Change Interval.
+- **One-Click Dashboard:** Opens the web interface directly.
 
-1.  **Download** the latest release from the GitHub Releases page.
-2.  **Unzip** the file to extract `ScreenRewind.app`.
+## Tech Stack
 
-### First-Time Launch
-Because this app is not signed with an Apple Developer certificate yet, macOS will block it if you just double-click.
+*   **Backend:** Python 3.10+, FastAPI, SQLAlchemy (SQLite), google-generativeai, pytesseract, mss.
+*   **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, Lucide Icons.
+*   **System:** MacOS specific optimizations (Quartz window management).
 
-1.  **Right-click (or Control-click)** on `ScreenRewind.app`.
-2.  Select **Open** from the menu.
-3.  Click **Open** in the warning dialog.
-    *   *You only need to do this once.*
+## Installation & Setup (Developer)
 
-### Permissions
-To allow the app to capture your activity:
-1.  When prompted, grant **Screen Recording** permission in System Settings.
-2.  If you don't see a prompt, go to **System Settings > Privacy & Security > Screen Recording** and enable **ScreenRewind**.
+### Prerequisites
+1.  **Python 3.10+**
+2.  **Bun** (or Node.js)
+3.  **Tesseract OCR** (`brew install tesseract`)
+4.  **Google Gemini API Key** (Set as `GEMINI_API_KEY` env var)
 
-### How to Use
-*   The app runs in the **Menu Bar** (look for the "SR" icon).
-*   **Start/Pause:** Click the icon to pause or resume recording.
-*   **Interval:** Change how often snapshots are taken (10s - 5m).
-*   **Settings:** Open the configuration file to customize categories.
+### 1. Backend Setup
 
-## Setup (For Developers)
-
-1.  Navigate to `backend/`.
-2.  Create a virtual environment: `python3 -m venv venv`
-3.  Activate it: `source venv/bin/activate`
-4.  Install dependencies: `pip install -r requirements.txt`
-
-## Usage
-
-### Running the Capture Daemon
-To start recording your screen activity:
 ```bash
-python src/main.py
+cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create .env file
+echo "GEMINI_API_KEY=your_key_here" > .env
+
+# Run the Tray App (Background Daemon + API)
+python src/gui/tray.py
 ```
 
-### Running the API Server
-To start the API server for querying data:
+### 2. Frontend Setup
+
 ```bash
-uvicorn src.api.main:app --reload
+cd frontend
+
+# Install dependencies
+bun install
+
+# Run Development Server
+bun dev
 ```
-The API will be available at `http://127.0.0.1:8000`.
-Interactive documentation is available at `http://127.0.0.1:8000/docs`.
+
+### 3. Usage
+
+1.  Start the Backend (Tray App will appear in menu bar).
+2.  Start the Frontend (visting `http://localhost:5173`).
+3.  **Tray Icon:** Right-click the "SR" icon in your mac menu bar -> Click **Dashboard** to open the UI.
+4.  **Dashboard:**
+    *   **Projects:** Define your main projects (e.g., "ScreenRewind", "Freelance", "Learning").
+    *   **Rules:** (Optional) Add specific rules if AI gets it wrong.
+    *   **Work:** Just work! The app will capture, OCR, and AI-classify your time.
+5.  **View Data:** Refresh the dashboard to see your time distribution.
+
+## "Danger Zone"
+
+In the **Settings** tab, you can reset the capture database.
+*   **Reset Database:** Deletes ALL screenshots, OCR text, and time logs.
+*   **Note:** Your Project definitions, Tasks, and Rules are *preserved*.
+
+## Project Structure
+
+- `backend/src/daemon`: Capture & AI logic.
+- `backend/src/api`: FastAPI endpoints.
+- `backend/src/gui`: macOS Tray application.
+- `frontend/src/pages`: React UI (Dashboard, Projects, Rules, Settings).
 
 ### API Endpoints
-- `GET /snapshots/`: List all snapshots (supports pagination and search via `q` parameter).
+
+#### Snapshots (`/snapshots`)
+- `GET /snapshots/`: List all snapshots (supports pagination and text search via `q`).
 - `GET /snapshots/latest`: Get the most recent snapshot.
 - `GET /snapshots/{id}`: Get details of a specific snapshot.
+
+#### Projects & Tasks (`/projects`)
+- `GET /projects/`: List all projects.
+- `POST /projects/`: Create a new project.
+- `PUT /projects/{id}`: Update a project's name or description.
+- `DELETE /projects/{id}`: Delete a project.
+- `POST /projects/{id}/tasks`: Create a task for a project.
+- `DELETE /projects/tasks/{task_id}`: Delete a task.
+
+#### Analytics (`/analytics`)
+- `GET /analytics/projects`: Get time distribution by project (filtering by start/end date).
+- `GET /analytics/projects/{name}/tasks`: Get time distribution by task for a specific project.
+
+#### Rules (`/rules`)
+- `GET /rules/`: List all categorization rules.
+- `POST /rules/`: Create a new regex-based rule.
+- `DELETE /rules/{id}`: Delete a rule.
+
+#### System (`/system`)
+- `DELETE /system/reset-data`: Clear all captured data (Screenshots, OCR, AI logs) but keep Projects/Tasks.

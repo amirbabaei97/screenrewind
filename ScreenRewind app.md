@@ -1,99 +1,95 @@
 # Software Requirements Specification (SRS)
 ## 1. Project Overview
 
-**ScreenRewind** is a locally hosted, cross-platform desktop application that automatically tracks user activity by capturing screen snapshots, performing Optical Character Recognition (OCR), and utilizing local AI to categorize work context.
+**ScreenRewind** is a client-server application that automatically tracks user activity across multiple devices. It consists of a lightweight local client (Mac Tray App) for data capture and a centralized server for processing, storage, and analysis.
 
-- **Core Philosophy:** "Uninterrupted workflow" meaning user doesn't need to provide manual input. "Uncompromising Privacy." No data ever leaves the user's machine.
-- **Target Audience:** Developers, Researchers, and Knowledge Workers who need granular time tracking without manual input.
-- **Distribution Goal:** Free, open-source, single-click install for macOS, Windows, and Linux.
+- **Core Philosophy:** "Seamless multi-device tracking." Users can switch between computers and have a unified view of their productivity.
+- **Target Audience:** Developers, Researchers, and Knowledge Workers who work across multiple machines.
+- **Distribution:** 
+    - **Client:** Mac Tray App (DMG).
+    - **Web:** Hosted Web Dashboard.
 
-## 2. Technical Stack (Cross-Platform)
+## 2. Technical Stack
 
-### Core Backend (The Logic)
-- **Language:** **Python 3.10+**
-    - _Why:_ Unmatched ecosystem for OCR and AI integration.
-- **Server Framework:** **FastAPI** (running on `localhost`).
-    - _Why:_ Provides a robust REST API for the frontend to consume and also I love it.
-- **Database:** **SQLite** (with **SQLAlchemy** ORM).
-    - _Why:_ Zero-config, single-file storage, perfect for local embedded use.
+### Component 1: Mac Core (Client / Tray App)
+- **Role:** The "Eyes". Runs locally on the user's Mac.
+- **Language:** **Python 3.10+**.
+- **Responsibilities:** 
+    - Capture screenshots using **MSS**.
+    - Perform **OCR** locally using **RapidOCR**.
+    - Capture window context (Active Window Title).
+    - Handle **Offline Queuing**: If internet is unavailable, queue data locally and sync when online.
+    - **Authentication:** Authenticate with the backend API to link data to the user account.
+    - **Data Transmission:** Send JSON payload (OCR text, metadata) and Screenshot file to the Backend API.
 
-### The "Eyes" (Capture & Processing)
-- **Screenshots:** **MSS** (Multiple Screen Shot).
-    - _Why:_ Extremely fast, cross-platform (Mac/Win/Linux), lightweight.     
-- **OCR Engine:** **RapidOCR** (Python wrapper for PaddleOCR ONNX).
-    - _Why:_ Faster and more accurate than Tesseract; supports ONNX runtime which is portable across OSs without heavy external dependencies.
-- **AI/LLM Integration:** User's own API key, for now we use Gemini, later openAI.  
+### Component 2: Backend API (Server)
+- **Role:** The "Brain" and "Memory". Hosted on Ubuntu VPS.
+- **Framework:** **FastAPI**.
+- **Database:** **PostgreSQL** (for robust multi-user transactional data).
+- **Storage:** Local filesystem or Object Storage (S3-compatible) for storing screenshots.
+- **Responsibilities:**
+    - **API Endpoints:** Receive data from Clents.
+    - **Processing Pipeline:**
+        1.  Receive payload.
+        2.  **Layer 1 Classification:** Apply user-defined Regex rules.
+        3.  **Layer 2 Classification:** If Layer 1 fails, query AI/LLM for categorization.
+        4.  Save metadata to DB and screenshot to storage.
+    - **User Management:** Authentication (OAuth2/JWT) and multi-tenancy.
 
-### Frontend (The UI)
+### Component 3: Frontend (Web Dashboard)
+- **Role:** The "Interface". Hosted on `https://app.amir.rocks` (example).
 - **Framework:** **React** + **Vite** + **TailwindCSS**.
-- **Wrapper:** **Tauri v2** (or Electron).
-    - _Recommendation:_ **Tauri**. It allows you to bundle the Python backend as a "sidecar." It creates significantly smaller installers (<50MB) compared to Electron (~150MB) and is more performant.
+- **Responsibilities:**
+    - User Authentication (Login/Signup).
+    - Dashboard visualization (Charts, Graphs).
+    - "Rewind" Time Machine interface.
+    - Project & Rule management.
 
 ## 3. Functional Requirements
 
-### FR1: Silent Data Collection (The Daemon)
+### FR1: Mac Client Behavior
+- **1.1 Silent Capture:** Runs in background/tray.
+- **1.2 Snapshot Cycle:**
+    1.  Take Screenshot.
+    2.  Check for Idleness (pHash comparison). Discard if idle.
+    3.  Capture Window Title.
+    4.  **Perform OCR locally.**
+    5.  Prepare payload.
+- **1.3 Connectivity Handling:**
+    - **Online:** Send payload immediately to `POST /api/v1/snapshots`.
+    - **Offline:** Serialize payload and store in a local queue (SQLite/File-based). Retry upload periodically or when connection restores.
+- **1.4 Auth:** Login flow via the Tray Menu (opens browser or simple credential input).
 
-The system must run silently in the background (System Tray application).
-- **1.1 Snapshot Interval:** Configurable timer (default: every 60 seconds).
-- **1.2 Idle Detection:** Calculate a perceptual hash (pHash) of the current screenshot. If `pHash(current) == pHash(prev)`, discard the image to save storage (User is idle).
-- **1.3 App Context:** Capture the active window title and process name using cross-platform calls (`pygetwindow` or custom platform-specific scripts).
-- **1.4 Exclusion Rules:** Users can blacklist specific apps (e.g., Password Managers, Banking) or window titles from ever being captured.
-- **1.5 Easy pause/resume** users should be able to schedule the recording time as well as easily pause/resume by clicking the app icon in the MacOS menu. 
-- **1.6 Active on Startup** the daemon should be active on startup and start capturing automatically. 
+### FR2: Server Processing & Intelligence
+- **2.1 Ingestion:** Secure endpoints to receive snapshots.
+- **2.2 Hybrid Classification (Server-Side):**
+    - _Layer 1 (Heuristic):_ Regex rules stored in DB per user. High priority.
+    - _Layer 2 (LLM):_ Integration with OpenAI/Gemini APIs from the server.
+- **2.3 Data Storage:** Efficient storage of millions of text records and images.
 
-### FR2: Local Data Processing
-
-- **2.1 Optical Character Recognition (OCR):** Every valid snapshot is processed to extract raw text strings.
-- **2.2 Image Compression:** Raw screenshots must be converted to **WebP** format (Quality 75%) immediately.
-    - _Target Size:_ ~100KB per image.
-    - _Storage impact:_ ~50MB per 8-hour workday.
-
-### FR3: Intelligent Categorization (The "Brain")
-
-- **3.1 Hierarchy:** The user can define a category tree (max 3 levels depth)(e.g., `PhD -> Research`, `PhD -> Writing`, `Side Hustle -> Coding`-> ScreenRewind app).
-- **3.2 Hybrid Classification:**
-    - _Layer 1 (Heuristic):_ Regex rules (e.g., If App == "VS Code", Category = "Coding"). These rules are user defined, so this has the highest priority. uses only window title. 
-    - _Layer 2 (LLM):_ If first layer rules fail, send the OCR text + Window Title to the local LLM with the prompt: _"Given this text from a screen, classify the activity into one of these categories: [List]. Return JSON."_ (Prompt obviously should be improved)
-
-### FR4: UI (Dashboard & Management)
-
-- **4.1 Analytics Dashboard:** Visualization of time tracking data.
+### FR3: Web User Interface
+- **3.1 Analytics Dashboard:** Visualization of time tracking data.
     - _Time Periods:_ Selectable ranges: Today, Yesterday, Custom Date Range.
     - _Project Distribution (Pie Chart):_ Shows percentage of time spent on each Project for the selected period.
-    - _Task Drill-down:_ Clicking a Project sector opens a secondary Pie Chart showing time distribution of Tasks within that Project.
-    - _Trends (Bar/Line Charts):_ 
-        - Bar Chart: Daily time spent on top projects over the last week.
-        - Line Chart: Total activity hours trends.
-- **4.2 Management Console:**
-    - _Projects & Tasks:_ Interface to list, create, update (descriptions), and delete Projects and their sub-Tasks.
-    - _Rules Management:_ Interface to CRUD text/regex rules (Layer 1 classification) and link them to specific Projects/Tasks.
+- **3.2 Time Machine (The Rewind):**
+    - Fetches images from server via API.
+    - Playback speed controls.
+    - Search functionality via server endpoints.
 
-### FR5: Time Machine (The Rewind)
+## 4. Deployment Strategy
 
-- **5.1 The "Rewind":** A graphical timeline spanning 00:00 to current time. Users can drag a handle to "rewind" their day.
-- **5.2 The Viewer:** The center stage displays the screenshot associated with the timestamp.
-- **5.3 Activity Heatmap:** A color-coded bar under the scrubber showing category density (e.g., Blue blocks for Work, Red blocks for YouTube). It also shows the icon of the app that was used at that time
-- **5.4 Search Bar:** Full-text search across all historical OCR data.
-    - _Query:_ "Gradient Descent" -> _Result:_ Shows all timestamps where that text appeared on screen and highlighting the text found in the screenshots.
+### Server (Ubuntu VPS)
+- **Infrastructure:**
+    - **Reverse Proxy:** Nginx (handles SSL and routing).
+    - **Process Manager:** Systemd (or Docker Compose) for FastAPI.
+    - **Database:** PostgreSQL.
+- **Domain:** `amir.rocks`. Web App on subdomain (e.g., `app.amir.rocks`, `api.amir.rocks`).
 
-### FR6: Data Lifecycle Management
+### Client (macOS)
+- **Packaging:** PyInstaller to create standalone `.app`/`.dmg`.
+- **Updates:** Sparkle or manual update check implementation.
 
-- **6.1 Retention Policy:** Configurable "Time to Live" (TTL).
-    - _Example:_ "Delete screenshots after 30 days, but keep text logs forever."
-- **6.2 Export:** Ability to export a CSV report of time spent per category/project for the desired time. 
-- **6.3 "Nuke" Button:** A panic button to delete all data immediately.
-
-## 4. Deployment & Distribution Strategy
-
-To achieve "Everyone can install it":
-1. **Packaging:** Use **PyInstaller** to compile the Python backend into a standalone executable (one for `.exe`, one for Mach-O, one for ELF).
-2. **Tauri Bundle:** Configure Tauri to bundle the compiled Python executable as a "sidecar."
-    - When the user double-clicks the App Icon, Tauri starts -> Tauri spawns the Python process in the background.
-3. **Dependencies:**
-    - **Included:** SQLite, RapidOCR (via pip), MSS.
-    - **Excluded (User Action Required):** LLM API Key. the app should  show a friendly modal: _"To enable AI features, please provide API Key. Until then, we will use basic keyword matching."
-
-## 5. Development Roadmap (MVP)
+## 5. Development Roadmap (Refined)
 
 1. **Phase 1 (Core):** Python script that uses `mss` to take screenshots, `RapidOCR` to read them, and saves to SQLite. (No UI yet). **(Completed)**
 2. **Phase 2 (API):** Wrap the script in FastAPI so you can query `GET /snapshots/latest`. **(Completed)**
