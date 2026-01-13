@@ -12,7 +12,7 @@ const Dashboard: React.FC = () => {
     const [startDate, setStartDate] = useState<Date>(new Date());
     const [endDate, setEndDate] = useState<Date>(new Date());
     const [dateRangeLabel, setDateRangeLabel] = useState<'today' | 'yesterday' | 'week' | 'custom'>('today');
-    
+
     const [projectData, setProjectData] = useState<ChartData[]>([]);
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [taskData, setTaskData] = useState<ChartData[]>([]);
@@ -27,52 +27,52 @@ const Dashboard: React.FC = () => {
         const start = new Date();
         const end = new Date();
         start.setHours(0, 0, 0, 0);
-        
+
         // Ensure end includes the full day (so user sees data up to "now" or end of day)
         // For 'yesterday' we end at 23:59:59 of yesterday. For 'today', we end up to current time (or end of day).
         // Let's use end of day for consistency if viewing historical.
-        
+
         if (preset === 'today') {
             // Start is 00:00 today. End is kept as "now" (default new Date())
-             end.setHours(23, 59, 59, 999);
+            end.setHours(23, 59, 59, 999);
         } else if (preset === 'yesterday') {
             start.setDate(start.getDate() - 1);
             end.setDate(end.getDate() - 1);
             end.setHours(23, 59, 59, 999);
         } else if (preset === 'week') {
             start.setDate(start.getDate() - 7);
-             end.setHours(23, 59, 59, 999);
+            end.setHours(23, 59, 59, 999);
         }
-        
+
         setStartDate(start);
         setEndDate(end);
         setDateRangeLabel(preset);
     };
 
     const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
-        const date = new Date(value);
+        // const date = new Date(value);
         // Correct for timezone offset if dealing with simple date inputs,
         // but typically input="date" returns YYYY-MM-DD. 
         // new Date("YYYY-MM-DD") is UTC, new Date(y,m,d) is local.
         // Let's rely on standard parsing but set time to boundary.
-        
+
         const parts = value.split('-');
-        if(parts.length === 3) {
-             const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-             if (type === 'start') {
-                 d.setHours(0,0,0,0);
-                 setStartDate(d);
-             } else {
-                 d.setHours(23,59,59,999);
-                 setEndDate(d);
-             }
-             setDateRangeLabel('custom');
+        if (parts.length === 3) {
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            if (type === 'start') {
+                d.setHours(0, 0, 0, 0);
+                setStartDate(d);
+            } else {
+                d.setHours(23, 59, 59, 999);
+                setEndDate(d);
+            }
+            setDateRangeLabel('custom');
         }
     };
 
     const formatDateForInput = (date: Date) => {
         const offset = date.getTimezoneOffset();
-        const d = new Date(date.getTime() - (offset*60*1000));
+        const d = new Date(date.getTime() - (offset * 60 * 1000));
         return d.toISOString().split('T')[0];
     };
 
@@ -124,22 +124,22 @@ const Dashboard: React.FC = () => {
                         Activity from <span className="text-blue-400 font-medium">{startDate.toLocaleDateString()}</span> to <span className="text-blue-400 font-medium">{endDate.toLocaleDateString()}</span>
                     </p>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-2 bg-gray-800 rounded-lg p-2 border border-gray-700">
-                     <div className="flex space-x-1">
-                        <button 
+                    <div className="flex space-x-1">
+                        <button
                             onClick={() => handleDatePreset('today')}
                             className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'today' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
                         >
                             Today
                         </button>
-                        <button 
+                        <button
                             onClick={() => handleDatePreset('yesterday')}
                             className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'yesterday' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
                         >
                             Yesterday
                         </button>
-                        <button 
+                        <button
                             onClick={() => handleDatePreset('week')}
                             className={clsx("px-3 py-1.5 rounded text-xs font-medium transition-colors", dateRangeLabel === 'week' ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white")}
                         >
@@ -147,15 +147,15 @@ const Dashboard: React.FC = () => {
                         </button>
                     </div>
                     <div className="flex items-center space-x-2 border-t sm:border-t-0 sm:border-l border-gray-600 pt-2 sm:pt-0 sm:pl-2">
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             className="bg-gray-900 text-white border border-gray-700 rounded text-xs px-2 py-1"
                             value={formatDateForInput(startDate)}
                             onChange={(e) => handleCustomDateChange('start', e.target.value)}
                         />
                         <span className="text-gray-500">-</span>
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             className="bg-gray-900 text-white border border-gray-700 rounded text-xs px-2 py-1"
                             value={formatDateForInput(endDate)}
                             onChange={(e) => handleCustomDateChange('end', e.target.value)}
@@ -180,7 +180,7 @@ const Dashboard: React.FC = () => {
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={projectData}
+                                            data={projectData as any}
                                             cx="50%"
                                             cy="50%"
                                             labelLine={false}
@@ -191,18 +191,18 @@ const Dashboard: React.FC = () => {
                                             cursor="pointer"
                                         >
                                             {projectData.map((entry, index) => (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={COLORS[index % COLORS.length]} 
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={COLORS[index % COLORS.length]}
                                                     stroke="rgba(0,0,0,0.1)"
                                                     strokeWidth={selectedProject === entry.name ? 4 : 0}
                                                 />
                                             ))}
                                         </Pie>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                                             itemStyle={{ color: '#fff' }}
-                                            formatter={(value: number) => [`${value} mins`, 'Duration']}
+                                            formatter={(value: any) => [`${value} mins`, 'Duration']}
                                         />
                                         <Legend />
                                     </PieChart>
@@ -225,7 +225,7 @@ const Dashboard: React.FC = () => {
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={taskData}
+                                            data={taskData as any}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={60}
@@ -234,14 +234,14 @@ const Dashboard: React.FC = () => {
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
-                                            {taskData.map((entry, index) => (
+                                            {taskData.map((_, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                                             itemStyle={{ color: '#fff' }}
-                                            formatter={(value: number) => [`${value} mins`, 'Duration']}
+                                            formatter={(value: any) => [`${value} mins`, 'Duration']}
                                         />
                                         <Legend />
                                     </PieChart>
@@ -269,13 +269,13 @@ const Dashboard: React.FC = () => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                 <XAxis type="number" stroke="#9CA3AF" />
                                 <YAxis dataKey="name" type="category" stroke="#9CA3AF" width={100} />
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                                     itemStyle={{ color: '#fff' }}
-                                    cursor={{fill: 'rgba(255, 255, 255, 0.05)'}}
+                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                                 />
                                 <Bar dataKey="value" fill="#00C49F" radius={[0, 4, 4, 0]}>
-                                    {projectData.map((entry, index) => (
+                                    {projectData.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Bar>

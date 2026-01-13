@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { getRules, createRule, deleteRule, getProjects } from '../services/api';
 import type { Rule, Project } from '../types';
-import { Plus, Trash2, Workflow } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 const Rules: React.FC = () => {
     const [rules, setRules] = useState<Rule[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     // Form state
     const [name, setName] = useState('');
     const [pattern, setPattern] = useState('');
@@ -27,7 +27,7 @@ const Rules: React.FC = () => {
 
     const handleCreate = async () => {
         if (!name || !pattern || !projectId) return;
-        
+
         await createRule({
             name,
             pattern,
@@ -35,7 +35,7 @@ const Rules: React.FC = () => {
             project_id: Number(projectId),
             task_id: taskId ? Number(taskId) : undefined
         });
-        
+
         setIsModalOpen(false);
         resetForm();
         loadData();
@@ -80,7 +80,7 @@ const Rules: React.FC = () => {
                         {rules.map(rule => {
                             const p = projects.find(x => x.id === rule.project_id);
                             const t = p?.tasks.find(x => x.id === rule.task_id);
-                            
+
                             return (
                                 <tr key={rule.id} className="border-t border-gray-700 hover:bg-gray-750">
                                     <td className="p-4 font-medium">{rule.name}</td>
@@ -106,14 +106,14 @@ const Rules: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
                     <div className="bg-gray-800 p-6 rounded-xl w-full max-w-lg border border-gray-700">
                         <h2 className="text-xl font-bold mb-4">Create Regex Rule</h2>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Rule Name</label>
-                                <input type="text" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white" 
+                                <input type="text" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white"
                                     value={name} onChange={e => setName(e.target.value)} />
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Field</label>
@@ -126,11 +126,11 @@ const Rules: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Regex Pattern</label>
-                                    <input type="text" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white font-mono" 
+                                    <input type="text" className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white font-mono"
                                         value={pattern} onChange={e => setPattern(e.target.value)} placeholder="e.g. .*VS Code.*" />
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Assign Project</label>
