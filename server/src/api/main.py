@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.routers import snapshots, analytics, categories, projects, rules, system
+from src.api.routers import snapshots, analytics, projects, rules, system
 from src.core.database import init_db
+from src.core.security import get_api_key
+from fastapi import Security, Depends
 
-app = FastAPI(title="ScreenRewind API")
+app = FastAPI(
+    title="ScreenRewind API",
+    dependencies=[Security(get_api_key)]
+)
 
 # Configure CORS
 app.add_middleware(

@@ -3,6 +3,10 @@ import os
 import sys
 from typing import Dict, List, Any
 from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Determine App Data Directory (Cross-platform)
 if sys.platform == "darwin":
@@ -30,6 +34,8 @@ DEFAULT_CATEGORIES = {
 DEFAULT_SETTINGS = {
     "capture_interval": 10
 }
+
+API_KEY = os.getenv("API_KEY")
 
 def ensure_config_dir():
     if not os.path.exists(CONFIG_DIR):

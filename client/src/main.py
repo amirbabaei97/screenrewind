@@ -13,6 +13,9 @@ from src.core.capture import capture_screen
 from src.core.ocr import extract_text
 from src.core.config import load_settings, APP_DATA_DIR
 from src.core.queue import UploadQueue
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 log_file = os.path.join(APP_DATA_DIR, "screenrewind.log")
@@ -107,7 +110,10 @@ class ScreenRewindDaemon(threading.Thread):
                     "window_title": window_title,
                     "app_name": app_name
                 }
-                response = requests.post(API_URL, files=files, data=data, timeout=10)
+                headers = {
+                    "X-API-Key": os.getenv("SCREENREWIND_API_KEY", "")
+                }
+                response = requests.post(API_URL, files=files, data=data, headers=headers, timeout=10)
                 if response.status_code == 200:
                     return True
                 else:

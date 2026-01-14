@@ -5,6 +5,9 @@ export type { Project, Task, Rule, ProjectAnalytics, TaskAnalytics } from '../ty
 
 const api = axios.create({
     baseURL: 'https://api.screenrewind.amir.rocks',
+    headers: {
+        'X-API-Key': import.meta.env.VITE_API_KEY
+    }
 });
 
 // Projects
