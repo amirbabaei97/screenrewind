@@ -113,7 +113,8 @@ class ScreenRewindDaemon(threading.Thread):
                 headers = {
                     "X-API-Key": os.getenv("SCREENREWIND_API_KEY", "")
                 }
-                response = requests.post(API_URL, files=files, data=data, headers=headers, timeout=10)
+                logging.info(f"Uploading to {API_URL}")
+                response = requests.post(API_URL, files=files, data=data, headers=headers, timeout=30)
                 if response.status_code == 200:
                     return True
                 else:
