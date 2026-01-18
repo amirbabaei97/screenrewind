@@ -26,15 +26,17 @@ def get_context_from_db(db: Session):
     tasks_list = []
     
     for p in projects:
-        projects_list.append(p.name)
+        p_desc = f" ({p.description})" if p.description else ""
+        projects_list.append(f"{p.name}{p_desc}")
         for t in p.tasks:
-            tasks_list.append(f"{p.name}: {t.name}")
+            t_desc = f" - {t.description}" if t.description else ""
+            tasks_list.append(f"{p.name}: {t.name}{t_desc}")
             
-    return ", ".join(projects_list), ", ".join(tasks_list)
+    return "; ".join(projects_list), "; ".join(tasks_list)
 
-def analyze_snapshot(image_path: str, ocr_text: str) -> Dict[str, str]:
+def analyze_snapshot(image_path: str, ocr_text: str, window_title: str = "", app_name: str = "") -> Dict[str, str]:
     """
-    Analyzes a snapshot using Google Gemini 2.0 Flash to determine Project and Task.
+    Analyzes a snapshot using Google Gemini to determine Project and Task.
     """
     if not os.environ.get("GEMINI_API_KEY"):
         print("Warning: GEMINI_API_KEY not set. Skipping AI analysis.")
@@ -47,8 +49,6 @@ def analyze_snapshot(image_path: str, ocr_text: str) -> Dict[str, str]:
     db = SessionLocal()
     try:
         projects_str, tasks_str = get_context_from_db(db)
-        logger.info(f"list of projects: {projects_str}")
-        logger.info(f"list of tasks: {tasks_str}")
     finally:
         db.close()
 
@@ -56,9 +56,13 @@ def analyze_snapshot(image_path: str, ocr_text: str) -> Dict[str, str]:
 You are an intelligent activity classifier for a time-tracking application.
 
 **Input:**
-1. A list of User Projects: {projects_str} 
+1. A list of User Projects (with descriptions): {projects_str} 
 2. and their active Tasks (with descriptions): {tasks_str}
-3. Raw Data: The Screen OCR Text and the **Actual Screenshot Image**. 
+3. Raw Data:
+    - Screen OCR Text: "{ocr_text}"
+    - Window Title: "{window_title}"
+    - App Name: "{app_name}"
+    - **Actual Screenshot Image** (attached).
 
 !!! MOST IMPORTANT RULE: ONLY USE THE PROJECTS AND TASKS PROVIDED IN THE LISTS ABOVE. DO NOT MAKE UP NEW ONES.!!!
 IF NOTHING MATCHES, RETURN "Uncategorized" FOR PROJECT AND null FOR TASK.
@@ -94,9 +98,6 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
         # Let's try reading the file as bytes.
         with open(image_path, "rb") as f:
             image_bytes = f.read()
-
-        # Log the full prompt for debugging
-        logger.info(f"--- GEMINI PROMPT PREVIEW ---\n{prompt}\n-----------------------------")
         
         # Use a model that supports JSON mode (e.g., gemini-2.0-flash-exp, gemini-1.5-flash)
         response = client.models.generate_content(
@@ -110,7 +111,7 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
         # Parse the response
         if response.text:
             text = response.text.strip()
-            logger.info(f"--- GEMINI RAW RESPONSE ---\n{text}\n---------------------------")
+
 
             # Handle markdown code blocks if the model ignores the "no markdown" instruction
             if text.startswith("```json"):

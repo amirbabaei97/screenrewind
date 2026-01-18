@@ -55,7 +55,7 @@ def categorize_activity(image_path: str, ocr_text: str, window_title: str, app_n
             
         # Layer 2: AI
         # We pass the image path and OCR text to the AI
-        return analyze_snapshot(image_path, ocr_text)
+        return analyze_snapshot(image_path, ocr_text, window_title, app_name)
         
     finally:
         db.close()
