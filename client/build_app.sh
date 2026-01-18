@@ -19,6 +19,7 @@ rm -rf build dist
     --icon "assets/app_icon.icns" \
     --add-data "src:src" \
     --add-data "assets/menubar_icon.png:src/gui" \
+    --add-data ".env:." \
     --hidden-import "sqlalchemy.sql.default_comparator" \
     --hidden-import "rapidocr_onnxruntime" \
     --hidden-import "uvicorn" \
@@ -28,6 +29,14 @@ rm -rf build dist
     --hidden-import "Cocoa" \
     --hidden-import "AppKit" \
     --hidden-import "Foundation" \
+    --hidden-import "jaraco.text" \
+    --hidden-import "jaraco.classes" \
+    --hidden-import "jaraco.context" \
+    --hidden-import "jaraco.functools" \
+    --hidden-import "platformdirs" \
+    --hidden-import "requests" \
+    --hidden-import "dotenv" \
+    --hidden-import "sqlite3" \
     --collect-all "rapidocr_onnxruntime" \
     --collect-all "uvicorn" \
     --collect-all "fastapi" \

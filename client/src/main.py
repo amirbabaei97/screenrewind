@@ -15,8 +15,6 @@ from src.core.config import load_settings, APP_DATA_DIR
 from src.core.queue import UploadQueue
 from dotenv import load_dotenv
 
-load_dotenv()
-
 # Configure logging
 log_file = os.path.join(APP_DATA_DIR, "screenrewind.log")
 handlers = [logging.FileHandler(log_file)]
@@ -28,6 +26,27 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=handlers
 )
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    return os.path.join(base_path, relative_path)
+
+# Load environment variables
+# Check if .env is in the bundle resource path (bundled) or current directory (dev)
+env_path = resource_path(".env")
+if os.path.exists(env_path):
+    logging.info(f"Loading .env from {env_path}")
+    load_dotenv(env_path)
+else:
+    # Fallback to default behavior (cwd or parents)
+    logging.info("Loading .env from default locations")
+    load_dotenv()
 
 API_URL = "https://api.screenrewind.amir.rocks/snapshots/"
 QUEUE_DB_PATH = os.path.join(APP_DATA_DIR, "upload_queue.db")
