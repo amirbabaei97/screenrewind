@@ -40,6 +40,11 @@ export const deleteTask = async (taskId: number) => {
     await api.delete(`/projects/tasks/${taskId}`);
 };
 
+export const updateTask = async (taskId: number, name: string, description?: string) => {
+    const response = await api.put<Task>(`/projects/tasks/${taskId}`, { name, description });
+    return response.data;
+};
+
 // Rules
 export const getRules = async () => {
     const response = await api.get<Rule[]>('/rules/');
