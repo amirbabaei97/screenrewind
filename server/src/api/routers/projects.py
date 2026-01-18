@@ -60,6 +60,19 @@ def create_task(project_id: int, task: TaskCreate, db: Session = Depends(get_db)
     db.refresh(new_task)
     return new_task
 
+@router.put("/tasks/{task_id}", response_model=TaskSchema)
+def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
+    db_task = db.query(Task).filter(Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    db_task.name = task.name
+    db_task.description = task.description
+    
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
 @router.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == task_id).first()

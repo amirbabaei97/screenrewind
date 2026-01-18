@@ -8,9 +8,19 @@ import clsx from 'clsx';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#6B5B95'];
 
 const Dashboard: React.FC = () => {
+    // Helper to get today's range
+    const getTodayRange = () => {
+        const start = new Date();
+        const end = new Date();
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+    };
+
     // Dates are stored as Date objects (local time)
-    const [startDate, setStartDate] = useState<Date>(new Date());
-    const [endDate, setEndDate] = useState<Date>(new Date());
+    // Initialize with today's full range immediately
+    const [startDate, setStartDate] = useState<Date>(() => getTodayRange().start);
+    const [endDate, setEndDate] = useState<Date>(() => getTodayRange().end);
     const [dateRangeLabel, setDateRangeLabel] = useState<'today' | 'yesterday' | 'week' | 'custom'>('today');
 
     const [projectData, setProjectData] = useState<ChartData[]>([]);
@@ -18,23 +28,17 @@ const Dashboard: React.FC = () => {
     const [taskData, setTaskData] = useState<ChartData[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Initialize dates on mount
-    useEffect(() => {
-        handleDatePreset('today');
-    }, []);
-
     const handleDatePreset = (preset: 'today' | 'yesterday' | 'week') => {
         const start = new Date();
         const end = new Date();
         start.setHours(0, 0, 0, 0);
 
-        // Ensure end includes the full day (so user sees data up to "now" or end of day)
-        // For 'yesterday' we end at 23:59:59 of yesterday. For 'today', we end up to current time (or end of day).
-        // Let's use end of day for consistency if viewing historical.
-
         if (preset === 'today') {
-            // Start is 00:00 today. End is kept as "now" (default new Date())
-            end.setHours(23, 59, 59, 999);
+            const range = getTodayRange();
+            setStartDate(range.start);
+            setEndDate(range.end);
+            setDateRangeLabel(preset);
+            return;
         } else if (preset === 'yesterday') {
             start.setDate(start.getDate() - 1);
             end.setDate(end.getDate() - 1);
@@ -48,6 +52,7 @@ const Dashboard: React.FC = () => {
         setEndDate(end);
         setDateRangeLabel(preset);
     };
+
 
     const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
         // const date = new Date(value);
