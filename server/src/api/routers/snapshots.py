@@ -61,8 +61,9 @@ def create_snapshot(
         window_title=window_title,
         app_name=app_name,
         # We might need to store project/task on the snapshot model if we want to query it later
-        # Assuming Snapshot model has these fields or we should add them.
-        # For MVP, let's assume we just save the raw data + generic analysis
+        project_name=project_name,
+        task_name=task_name,
+        explanation=category_result.get("explanation", "")
     )
     
     # Check if Snapshot model has project_id/task_id, if so update them

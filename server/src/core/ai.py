@@ -95,6 +95,9 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
+        # Log the full prompt for debugging
+        logger.info(f"--- GEMINI PROMPT PREVIEW ---\n{prompt}\n-----------------------------")
+        
         # Use a model that supports JSON mode (e.g., gemini-2.0-flash-exp, gemini-1.5-flash)
         response = client.models.generate_content(
             model="gemma-3-27b-it",
@@ -107,6 +110,8 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
         # Parse the response
         if response.text:
             text = response.text.strip()
+            logger.info(f"--- GEMINI RAW RESPONSE ---\n{text}\n---------------------------")
+
             # Handle markdown code blocks if the model ignores the "no markdown" instruction
             if text.startswith("```json"):
                 text = text[7:]
@@ -115,7 +120,16 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
             if text.endswith("```"):
                 text = text[:-3]
             
-            return json.loads(text.strip())
+            try:
+                return json.loads(text.strip())
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from Gemini response: {e}")
+                logger.error(f"Bad JSON content: {text}")
+                return {
+                    "project": "Uncategorized",
+                    "task": "General",
+                    "explanation": f"AI response was not valid JSON. Raw: {text[:100]}"
+                }
         else:
             return {
                 "project": "Uncategorized",

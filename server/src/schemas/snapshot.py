@@ -7,6 +7,9 @@ class SnapshotBase(BaseModel):
     ocr_text: Optional[str] = None
     window_title: Optional[str] = None
     app_name: Optional[str] = None
+    project_name: Optional[str] = None
+    task_name: Optional[str] = None
+    explanation: Optional[str] = None
 
 class SnapshotCreate(SnapshotBase):
     pass
