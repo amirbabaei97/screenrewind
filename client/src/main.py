@@ -156,6 +156,11 @@ class ScreenRewindDaemon(threading.Thread):
                 logging.info(f"Uploading to {API_URL}")
                 response = requests.post(API_URL, files=files, data=data, headers=headers, timeout=30)
                 if response.status_code == 200:
+                    try:
+                        os.remove(filepath)
+                        logging.info(f"Deleted local file: {filepath}")
+                    except OSError as e:
+                        logging.error(f"Error deleting file {filepath}: {e}")
                     return True
                 else:
                     logging.error(f"API Error: {response.status_code} - {response.text}")
