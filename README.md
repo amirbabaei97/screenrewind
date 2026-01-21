@@ -79,7 +79,7 @@ python src/main.py
 pyinstaller --name ScreenRewind --windowed --icon=assets/app_icon.icns src/gui/tray.py
 ```
 
-*Note: The client is configured to send data to `https://api.screenrewind.amir.rocks`. Edit `API_URL` in `src/main.py` for local dev.*
+*Note: The client is configured to send data to `https://api.screenrewind.amir.rocks`. Edit `API_URL` in `src/main.py` for local dev. Time tracking interval is controlled by `~/.screenrewind/settings.json`.*
 
 ### 3. Frontend Setup (Web)
 
@@ -108,6 +108,10 @@ bun run build
 - **Smart Categorization:**
     - **Layer 1:** Regex Rules (defined by you).
     - **Layer 2:** AI Classification (Google Gemini) for "fuzzy" understanding.
+- **Smart Time Tracking:**
+    - Precise duration measurement (handles lag/latency).
+    - Intelligent pause/resume handling.
+    - System sleep detection (prevents "ghost" hours).
 - **Time Travel:** Visually scrub back through your day to find what you were working on.
 
 ## Project Structure

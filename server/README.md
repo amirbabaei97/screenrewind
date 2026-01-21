@@ -66,7 +66,7 @@ The backend exposes a REST API structured around key resources.
 The core data unit.
 - **POST `/snapshots/`**: (Client Only) Upload a new screen capture. 
   - Accepts `multipart/form-data`.
-  - Fields: `file` (image), `ocr_text`, `window_title`, `app_name`, `timestamp`.
+  - Fields: `file` (image), `ocr_text`, `window_title`, `app_name`, `timestamp`, `duration` (optional, seconds).
   - Triggers the categorization pipeline.
 - **GET `/snapshots/`**: List snapshots. Supports pagination (`img`, `limit`) and search (`q` for OCR text).
 - **GET `/snapshots/latest`**: Fetch the most recent snapshot (for real-time dashboard).
