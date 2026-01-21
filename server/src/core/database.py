@@ -41,3 +41,7 @@ def init_db():
             conn.execute(text("ALTER TABLE snapshots ADD COLUMN explanation TEXT"))
         except Exception:
             pass
+        try:
+            conn.execute(text("ALTER TABLE snapshots ADD COLUMN duration_seconds INTEGER DEFAULT 10"))
+        except Exception:
+            pass

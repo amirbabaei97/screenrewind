@@ -16,6 +16,7 @@ class Snapshot(Base):
     project_name = Column(String, nullable=True)
     task_name = Column(String, nullable=True)
     explanation = Column(Text, nullable=True)
+    duration_seconds = Column(Integer, default=10)
     
     # Deprecated but kept for backward compatibility if needed, or we can migrate it to project_name
     category = Column(String, default="Uncategorized")

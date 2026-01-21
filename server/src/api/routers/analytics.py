@@ -23,22 +23,22 @@ def get_project_distribution(
     """
     results = db.query(
         Snapshot.project_name,
-        func.count(Snapshot.id).label("count")
+        func.sum(Snapshot.duration_seconds).label("total_seconds")
     ).filter(
         Snapshot.timestamp >= start,
         Snapshot.timestamp <= end
     ).group_by(Snapshot.project_name).all()
     
     data = []
-    total_count = sum(r[1] for r in results)
+    total_seconds = sum(r[1] for r in results) if results else 0
     
-    for project, count in results:
-        minutes = round(count * 10 / 60, 2) # Assuming 10s interval
+    for project, seconds in results:
+        minutes = round(seconds / 60, 2)
         project_name = project if project else "Uncategorized"
         data.append({
             "name": project_name,
             "value": minutes,
-            "percentage": round((count / total_count) * 100, 1) if total_count > 0 else 0
+            "percentage": round((seconds / total_seconds) * 100, 1) if total_seconds > 0 else 0
         })
         
     return data
@@ -55,7 +55,7 @@ def get_task_distribution(
     """
     results = db.query(
         Snapshot.task_name,
-        func.count(Snapshot.id).label("count")
+        func.sum(Snapshot.duration_seconds).label("total_seconds")
     ).filter(
         Snapshot.timestamp >= start,
         Snapshot.timestamp <= end,
@@ -63,15 +63,15 @@ def get_task_distribution(
     ).group_by(Snapshot.task_name).all()
     
     data = []
-    total_count = sum(r[1] for r in results)
+    total_seconds = sum(r[1] for r in results) if results else 0
     
-    for task, count in results:
-        minutes = round(count * 10 / 60, 2)
+    for task, seconds in results:
+        minutes = round(seconds / 60, 2)
         task_name = task if task else "General"
         data.append({
             "name": task_name,
             "value": minutes,
-            "percentage": round((count / total_count) * 100, 1) if total_count > 0 else 0
+            "percentage": round((seconds / total_seconds) * 100, 1) if total_seconds > 0 else 0
         })
         
     return data

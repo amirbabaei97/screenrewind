@@ -10,6 +10,7 @@ from src.core.database import get_db
 from src.models.snapshot import Snapshot
 from src.schemas.snapshot import SnapshotResponse
 from src.core.categorization import categorize_activity
+from src.core.config import load_settings, DEFAULT_SETTINGS
 
 router = APIRouter(
     prefix="/snapshots",
@@ -54,6 +55,9 @@ def create_snapshot(
     task_name = category_result.get("task", "General")
     
     # 3. Save to DB
+    settings = load_settings()
+    duration = settings.get("capture_interval", DEFAULT_SETTINGS["capture_interval"])
+
     new_snapshot = Snapshot(
         timestamp=timestamp,
         file_path=file_path,
@@ -63,7 +67,8 @@ def create_snapshot(
         # We might need to store project/task on the snapshot model if we want to query it later
         project_name=project_name,
         task_name=task_name,
-        explanation=category_result.get("explanation", "")
+        explanation=category_result.get("explanation", ""),
+        duration_seconds=int(duration)
     )
     
     # Check if Snapshot model has project_id/task_id, if so update them
