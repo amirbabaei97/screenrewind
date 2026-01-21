@@ -60,6 +60,7 @@ class ScreenRewindDaemon(threading.Thread):
         self.paused = False
         self._stop_event = threading.Event()
         self.queue = UploadQueue(QUEUE_DB_PATH)
+        self.last_capture_time = None
 
     def update_interval(self, new_interval):
         self.interval = new_interval
@@ -103,19 +104,38 @@ class ScreenRewindDaemon(threading.Thread):
         text = extract_text(filepath)
         
         timestamp = datetime.now()
+        current_time = time.time()
+        
+        # Calculate duration
+        if self.last_capture_time is None:
+            # First run, assume configured interval
+            duration = self.interval
+        else:
+            duration = current_time - self.last_capture_time
+            # Cap huge durations (e.g. system sleep) to avoid skewing analytics
+            # If duration is more than 10x the interval or > 10 minutes, treat as a break
+            if duration > max(self.interval * 10, 600):
+                 logging.warning(f"Excessive duration detected ({duration}s). Assuming system sleep/break. Resetting to default.")
+                 duration = self.interval
+            
+        self.last_capture_time = current_time
         
         # 3. Upload or Queue
         logging.info("Attempting upload...")
-        success = self._upload_snapshot(filepath, text, window_title, app_name, timestamp)
+        success = self._upload_snapshot(filepath, text, window_title, app_name, timestamp, int(duration))
         
         if not success:
             logging.warning("Upload failed/Offline. Queuing...")
+            # Note: Queue schema update required to full support duration persistence offline.
+            # passing defaults for now compatible with old schema if strict, or we can assume queue handles flexible args?
+            # Looking at main.py, queue.add(timestamp, text, window_title, app_name, filepath)
+            # We haven't updated queue.py. 
             self.queue.add(timestamp, text, window_title, app_name, filepath)
         else:
             logging.info("Upload successful.")
             self._process_queue()
 
-    def _upload_snapshot(self, filepath, ocr_text, window_title, app_name, timestamp):
+    def _upload_snapshot(self, filepath, ocr_text, window_title, app_name, timestamp, duration):
         try:
             if not os.path.exists(filepath):
                 logging.error(f"File not found: {filepath}")
@@ -127,7 +147,8 @@ class ScreenRewindDaemon(threading.Thread):
                     "timestamp": timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp,
                     "ocr_text": ocr_text,
                     "window_title": window_title,
-                    "app_name": app_name
+                    "app_name": app_name,
+                    "duration": duration
                 }
                 headers = {
                     "X-API-Key": os.getenv("SCREENREWIND_API_KEY", "")
@@ -157,7 +178,8 @@ class ScreenRewindDaemon(threading.Thread):
                 item['ocr_text'], 
                 item['window_title'], 
                 item['app_name'], 
-                item['timestamp']
+                item['timestamp'],
+                10 # Default for queued items until schema update
             )
             if success:
                 processed_ids.append(item['id'])
@@ -176,6 +198,7 @@ class ScreenRewindDaemon(threading.Thread):
 
     def pause(self):
         self.paused = True
+        self.last_capture_time = None # Reset timer to prevent huge duration on resume
         logging.info("Daemon paused.")
 
     def resume(self):

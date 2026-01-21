@@ -27,6 +27,7 @@ def create_snapshot(
     window_title: str = Form(""),
     app_name: str = Form(""),
     timestamp_str: str = Form(..., alias="timestamp"), # Expecting ISO string
+    duration: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     # 1. Save Screenshot
@@ -55,8 +56,11 @@ def create_snapshot(
     task_name = category_result.get("task", "General")
     
     # 3. Save to DB
-    settings = load_settings()
-    duration = settings.get("capture_interval", DEFAULT_SETTINGS["capture_interval"])
+    if duration is None:
+        settings = load_settings()
+        duration_val = settings.get("capture_interval", DEFAULT_SETTINGS["capture_interval"])
+    else:
+        duration_val = duration
 
     new_snapshot = Snapshot(
         timestamp=timestamp,
@@ -68,7 +72,7 @@ def create_snapshot(
         project_name=project_name,
         task_name=task_name,
         explanation=category_result.get("explanation", ""),
-        duration_seconds=int(duration)
+        duration_seconds=int(duration_val)
     )
     
     # Check if Snapshot model has project_id/task_id, if so update them
