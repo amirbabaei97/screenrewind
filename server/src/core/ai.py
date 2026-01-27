@@ -3,6 +3,7 @@ import json
 from typing import Optional, Dict, Any
 from google import genai
 from google.genai import types
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from sqlalchemy.orm import Session
 from src.core.database import SessionLocal
 from src.models.project import Project, Task
@@ -19,6 +20,29 @@ logger = logging.getLogger(__name__)
 # Initialize Gemini Client
 # reading API key from environment variable .env file
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
+def is_retryable_error(exception):
+    """
+    Check if the exception is a 503 Service Unavailable or similar transient error.
+    """
+    msg = str(exception).upper()
+    return "503" in msg or "UNAVAILABLE" in msg or "OVERLOADED" in msg or "429" in msg
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=2, min=2, max=10),
+    retry=retry_if_exception(is_retryable_error),
+    reraise=True
+)
+def _call_gemini_api(model: str, contents: list) -> Any:
+    """
+    Helper function to call Gemini API with retries.
+    """
+    return client.models.generate_content(
+        model=model,
+        contents=contents
+    )
+
 
 def get_context_from_db(db: Session):
     projects = db.query(Project).all()
@@ -100,7 +124,7 @@ Return ONLY a raw JSON object. Do not use markdown code blocks.
             image_bytes = f.read()
         
         # Use a model that supports JSON mode (e.g., gemini-2.0-flash-exp, gemini-1.5-flash)
-        response = client.models.generate_content(
+        response = _call_gemini_api(
             model="gemma-3-27b-it",
             contents=[
                 prompt,
